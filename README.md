@@ -1,74 +1,324 @@
-# bunnystream-api-php
+# Bunny Stream PHP Library
+A simple PHP library to interact with the Bunny Stream [API](https://docs.bunny.net/reference/api-overview).
 
-### Usage
+### Requires
+In order to interact with the API you need the API Access Information (Stream->{Library}->API)
 
-Import the library and use the constructor:
+## Installation
 
-    $bstream = new BunnyCDNStream("YOUR_VIDEO_LIBRARY_ID", "YOUR_STREAM_ZONE_API_KEY");
+```shell
+composer require bunnycdn/stream
+```
+
+## How to use: 
+
+### Quick start
+Create an instance of the \Bunny\Stream\Client with the authentication details:
+
+```php
+$client = new \Bunny\Stream\Client('API_KEY', 'LIBRARY_ID');
+```
+---
+## Manage Videos: 
+
+### Listing Videos:
+```php
+$client->listVideos();
+
+$client->listVideos($search, $page, $items, $collection, $orderby); //filtered results
+```
+Optional:
+
+- `$Search` if set, the response will be filtered to only contain videos that contain the search term `string`
+
+- `$Page` Page number. Default is 1 `int`
+
+- `$Items` Number of results per page. Default is 100 `int`
+
+- `$Collection` If set, the response will only contain videos that belong to this collection Id  `string`
+
+- `$OrderBy` Determines the ordering of the result within the response. date/title `string`
 
 ---
 
-### Methods
+###  Get Video
+```php
+$client->getVideo($videoId);
+```
+`$videoId` ID of the video `string`
 
-#### `(json) getVideo($videoId)`
+---
 
-Provided that the correct Video ID and Stream API key were used, this will return a JSON object containing the video object's metadata.
+### Update Video
+```php
+$body = [
+        'title' => '...',
+        'collectionId' => '...',
+        'chapters' => [
+            [
+                'title' => 'Chapter 1',
+                'start' => 0,
+                'end' => 300,
+            ]
+        ],
+        'moments' => [
+            [
+                'label' => 'Awesome Scene 1',
+                'timestamp' => 70,
+            ],
+        ],
+        'metaTags' => [
+            [
+                'property' => 'description',
+                'value' => 'My Video Description',
+            ],
+        ],
+];
+$client->updateVideo($videoId, $body);
+```
+`$videoId` Id of the video `string`
 
-Exceptions are divided into HTTP status codes (and this applies to all methods):
+`$body` Updated video details `array`
 
-- 401
-  - Your API key is invalid
-- 404
-  - Either your library or video could not be found
-  
-It is safe to assume that if no exception is thrown, the video's information will be in the response JSON object.
+---
 
-#### `(json) listVideos($page = 1, $perPage = 10, $sortBy = "date", $search = null, $collection = null)`
+### Delete Video
+```php
+$client->deleteVideo($videoId);
+```
+`$videoId` Id of the video that will be **permanently** deleted `string`
 
-While you can override the default values, this, by default, will provide the first 10 videos in your Stream zone.
+---
 
-You can also provide an optional "search" parameter to find videos, or look for videos in specific collections.
+### Create Video Entry
+```php
+$client->createVideo($title, $collectionId, $thumbnailTime);
+```
+`$title` Title of the video `string`
 
-#### `(json) updateVideo($videoId, $title, $collectionId)`
+Optional:
 
-This will update a video's title and collection ID.
+- `$collectionId` Collection Id `string`
 
-#### `(json) deleteVideo($videoId)`
+- `$thumbnailTime` Video time in ms to extract the main video thumbnail `int32`
 
-This will **permanantly** delete a video.
+---
 
-#### `(json) createVideo($title, $collectionId = null)`
+### Upload Video with Id
+```php
+$client->uploadVideoWithVideoId($videoId, $path, $enabledResolutions);
+```
+`$videoId` Id of the video entry `string`
 
-Creates a video object (this MUST BE DONE before calling `uploadVideoWithId()`).
+`$path` Video file path `string`
 
-#### `(json) uploadVideoWithVideoId($videoId, $filePath)`
+Optional: 
 
-This will upload a video located at `/path/to/your/video.mp4` to the video object located at `$videoId`.
+- `$enabledResolutions` Custom resolutions for the video `string` 
 
-#### `(json) uploadVideo($title, $filePath, $collectionId = null)`
+---
 
-This will create a video object AND upload a video at `$filePath`. Collection ID is optional.
+### Upload Video
+```php
+$client->uploadVideo($title, $path, $collectionId, $thumbnailTime, $enabledResolutions);
+```
+`$title` Title of the video `string`
 
-#### `(json) setVideoThumbnail($videoId, $thumbnailUrl)`
+`$path` Video file path `string`
 
-Set the video thumbnail to an image at `$thumbnailUrl`.
+Optional:
 
-#### `(json) fetchVideo($videoId, $source, $headers = null)`
+- `$collectionId` Collection Id `string`
 
-Fetch video from external source `$source` and upload it to `$videoId`. 
+- `$thumbnailTime` Video time in ms to extract the main video thumbnail `int32`
 
-You may optionally provide a key value pair to `$headers` if your external source requires authentication.
+- `$enabledResolutions` Custom resolutions for the video `string`
 
-#### `(json) addVideoCaptions($videoId, $language, $content, $label = null)`
+---
 
-Add a VRT captions file (`$content` = the /path/to/file.vrt) to `$videoId`. 
+### Set Thumbnail
+```php
+$client->setVideoThumbnail($videoId, $url);
+```
+`$videoId` Id of the video `string`
 
-While `$label` is optional, it is _highly recommended_ so users know what they're selecting.
+`$url` accessible thumbnail url `string`
 
-#### `(json) deleteVideoCaptions($videoId, $language)`
+---
 
-Deletes a caption file from a video object (where video == `$videoId`). 
+### Get Video Heatmap
+```php
+$client->getVideoHeatmap($videoId);
+```
+`$videoId` Id of the video `string`
 
-Make sure to specify the correct 2-letter language code.
+---
+
+### Get Video play data
+```php
+$client->getVideoPlayData($videoId, $token, $expires);
+```
+`$videoId` Id of the video `string`
+
+Optional:
+
+- `$token` Token to authenticate the request `string`
+
+- `$expires` Expiry time of the token `int64`
+
+---
+
+### Get Video Statistics
+```php
+$query = [
+    'dateFrom' => 'm-d-Y',
+    'dateTo' => 'm-d-Y',
+    'hourly' => false,
+    'videoGuid' => '...',
+];
+$client->getVideoStatistics($videoId, $query);
+```
+`$videoId` Id of the video `string`
+
+Optional:
+
+- `$query` parameters `array`: 
+    - *dateFrom* - The start date of the statistics. If no value is passed, the last 30 days will be returned. `date-time`
+    - *dateTo* - The end date of the statistics. If no value is passed, the last 30 days will be returned. `date-time`
+    - *hourly* - If true, the statistics data will be returned in hourly groupping. `boolean` 
+    - *videoGuid* - The GUID of the video for which the statistics will be returned `string`
+
+### Re-encode Video
+```php
+$client->reencodeVideo($videoId);
+```
+`$videoId` Id of the video `string`
+
+---
+
+### Repackage Video
+```php
+$client->repackageVideo($videoId, $keepOriginalFiles);
+```
+`$videoId` Id of the video `string`
+
+`$keepOriginalFiles` Marks whether previous file versions should be kept in storage, allows for faster repackage later on. Default is true.
+
+---
+
+### Fetch Video
+```php
+$client->fetchVideo($url, $title, $collectionId, $thumbnailTime, $headers);
+```
+`$url` The URL from which the video will be fetched from. `string`
+
+Optional:
+
+- `$title` Title of the video `string`
+
+- `$collectionId` Collection Id `string`
+
+- `$thumbnailTime` Video time in ms to extract the main video thumbnail `int32`
+
+- `$headers` Additional headers that will be sent along with the fetch request. `array`
+
+---
+
+### Add Caption
+```php
+$client->addCaption($videoId, $srclang, $path, $label);
+```
+`$videoId` Id of the video `string`
+
+`$srclang` Language shortcode for the caption. `string`
+
+`$path` Caption file path (.vtt/.srt) `string`
+
+Optional:
+
+- `$label` Label of the caption `string`
+
+---
+
+### Delete Caption
+```php
+$client->deleteCaption($videoId, $srclang);
+```
+`$videoId` Id of the video `string`
+
+`$srclang`  Language shortcode for the caption. `string`
+
+---
+
+### Transcribe video
+```php
+$client->transcribeVideo($videoId, $language, $force);
+```
+`$videoId` Id of the video `string`
+
+`$language` Language code for the transcription `string`
+
+`$force` Default is false `bool`
+
+---
+
+## Collections:
+
+### Listing Collections
+```php
+$client->listCollections($search, $page, $items, $orderby, $includeThumbnails);
+```
+Optional:
+
+- `$search` if set, the response will be filtered to only contain collections that contain the search term `string`
+
+- `$page` Page number. Default is 1 `int`
+
+- `$items` Number of results per page. Default is 100 `int`
+
+- `$orderby` Determines the ordering of the result within the response. date/title `string`
+
+- `$includeThumbnails` If set to true, the response will include the thumbnail for each collection. Default is false `bool`
+
+---
+
+### Get Collection
+```php
+$client->getCollection($collectionId, $includeThumbnails);
+```
+`$collectionId` Id of the collection `string`
+
+Optional:
+
+- `$includeThumbnails` If set to true, the response will include the thumbnail URL for the collection. Default is false `bool`
+
+---
+
+### Create Collection
+```php
+$client->createCollection($name);
+```
+`$name` Name of the collection `string`
+
+---
+
+### Update Collection
+```php
+$client->updateCollection($collectionId, $name);
+```
+`$collectionId` Id of the collection `string`
+
+`$name` Updated name of the collection `string`
+
+---
+
+### Delete Collection
+```php
+$client->deleteCollection($collectionId);
+```
+`$collectionId` Id of the collection to be deleted `string`
 
 
+---
+## Returns
+All methods return an associative array with the response from the API, or an exception if an error occurs. Check reference for specific responses.
