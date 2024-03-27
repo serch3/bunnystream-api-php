@@ -76,7 +76,7 @@ class Client
 
     public function updateVideo(string $videoId, array $body): mixed
     {
-        $response = $this->httpClient->request('PUT', 'videos/' . $videoId, [
+        $response = $this->httpClient->request('POST', 'videos/' . $videoId, [
             'json' => $body,
         ]);
 
@@ -512,7 +512,7 @@ class Client
 
     public function updateCollection(string $collectionId, string $name): mixed
     {
-        $response = $this->httpClient->request('PUT', 'collections/' . $collectionId, [
+        $response = $this->httpClient->request('POST', 'collections/' . $collectionId, [
             'json' => [
                 'name' => $name,
             ],
